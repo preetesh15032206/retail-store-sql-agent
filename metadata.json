@@ -1,0 +1,6 @@
+{
+  "name": "AI Database Agent - SQL Query & Analytics Assistant",
+  "description": "Production-grade AI SQL agent that translates natural language into safe, validated SQL queries, introspects database schema, visualizes insights, and explains query mechanics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
