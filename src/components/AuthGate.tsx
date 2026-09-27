@@ -1,26 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { Database, Lock, AlertCircle, ShieldCheck, UserCheck, Sparkles, Terminal } from 'lucide-react';
 import {
   initFirebase,
-  getFirebaseConfig,
   googleProvider,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
   User
 } from '../firebase.ts';
-import {
-  ShieldCheck,
-  Lock,
-  LogIn,
-  LogOut,
-  Settings,
-  Sparkles,
-  CheckCircle2,
-  AlertCircle,
-  Database,
-  Terminal,
-  ExternalLink
-} from 'lucide-react';
 
 interface AuthGateProps {
   children: (user: User | null, onLogout: () => void) => React.ReactNode;
@@ -30,107 +17,73 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [config, setConfig] = useState(getFirebaseConfig());
-  const [rawConfigInput, setRawConfigInput] = useState('');
-  const [isConfigured, setIsConfigured] = useState(false);
+  const [authInstance, setAuthInstance] = useState<any>(null);
 
   useEffect(() => {
-    const activeConfig = getFirebaseConfig();
-    if (activeConfig.apiKey && activeConfig.projectId) {
-      setIsConfigured(true);
-      const { auth } = initFirebase(activeConfig);
-      if (auth) {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-          setUser(currentUser);
-          setLoading(false);
-        });
-        return () => unsubscribe();
+    try {
+      const { auth } = initFirebase();
+      if (!auth) {
+        setLoading(false);
+        return;
       }
+      setAuthInstance(auth);
+
+      const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
+        setUser(currentUser);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    } catch (err: any) {
+      console.error('Auth initialization error:', err);
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const handleGoogleLogin = async () => {
     setAuthError(null);
+    let auth = authInstance;
+    if (!auth) {
+      const res = initFirebase();
+      auth = res.auth;
+      setAuthInstance(auth);
+    }
+
+    if (!auth) {
+      setAuthError('Authentication service is initializing. Please try again.');
+      return;
+    }
+
     try {
-      const { auth } = initFirebase();
-      if (!auth) {
-        setShowConfigModal(true);
-        return;
-      }
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        console.info('Google Sign-In popup closed by user.');
-        setAuthError(null);
-        return;
+      console.error('Google Sign-in failed:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setAuthError('Sign-in cancelled. Please try again.');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setAuthError('This domain is not yet authorized in Firebase Console -> Authentication -> Settings -> Authorized domains.');
+      } else {
+        setAuthError(err.message || 'Google Sign-in failed. Please try again.');
       }
-      console.error('Google Sign-In Error:', err);
-      let msg = err.message || 'Google sign-in failed.';
-      if (err.code === 'auth/unauthorized-domain') {
-        msg = 'Domain not authorized. Please add this domain to Firebase Console -> Authentication -> Settings -> Authorized domains.';
-      } else if (err.code === 'auth/configuration-not-found' || err.code === 'auth/invalid-api-key') {
-        msg = 'Firebase Authentication is not enabled or credentials need verification.';
-        setShowConfigModal(true);
-      }
-      setAuthError(msg);
     }
   };
 
   const handleLogout = async () => {
-    try {
-      const { auth } = initFirebase();
-      if (auth) {
-        await signOut(auth);
+    if (authInstance) {
+      try {
+        await signOut(authInstance);
         setUser(null);
+      } catch (err) {
+        console.error('Logout error:', err);
       }
-    } catch (err: any) {
-      console.error('Logout error:', err);
     }
   };
 
-  const handleSaveFirebaseConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      let parsed = config;
-      if (rawConfigInput.trim()) {
-        // Try parsing snippet e.g. const firebaseConfig = { ... }
-        const match = rawConfigInput.match(/\{[\s\S]*\}/);
-        if (match) {
-          // Clean keys to valid JSON format if needed
-          const cleaned = match[0]
-            .replace(/([a-zA-Z0-9_-]+)\s*:/g, '"$1":')
-            .replace(/'/g, '"')
-            .replace(/,\s*\}/g, '}');
-          parsed = JSON.parse(cleaned);
-        } else {
-          parsed = JSON.parse(rawConfigInput);
-        }
-      }
-
-      localStorage.setItem('sql_agent_firebase_config', JSON.stringify(parsed));
-      setConfig(parsed);
-      setIsConfigured(true);
-      setShowConfigModal(false);
-      setAuthError(null);
-
-      // Re-init
-      const { auth } = initFirebase(parsed);
-      if (auth) {
-        onAuthStateChanged(auth, (currentUser) => {
-          setUser(currentUser);
-        });
-      }
-    } catch (err: any) {
-      setAuthError('Could not parse Firebase config. Please verify the JSON or snippet format.');
-    }
-  };
-
+  // While checking auth status
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300">
-        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-3 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
         <p className="text-sm font-mono text-slate-400">Verifying security credentials...</p>
       </div>
     );
@@ -145,7 +98,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-cyan-500/20 selection:text-cyan-200">
       {/* Top Bar */}
-      <div className="h-16 border-b border-slate-800/80 px-8 flex items-center justify-between">
+      <header className="h-16 border-b border-slate-800/80 px-4 sm:px-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-semibold shadow-inner">
             <Database className="w-4 h-4" />
@@ -154,22 +107,24 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
             Retail SQL Agent & Analytics
           </span>
         </div>
-        <button
-          onClick={() => setShowConfigModal(true)}
-          className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-800 bg-slate-900/50 hover:bg-slate-800 transition-colors"
-          title="Configure Firebase Keys"
-        >
-          <Settings className="w-3.5 h-3.5" />
-          <span>Firebase Setup</span>
-        </button>
-      </div>
+
+        {/* Developer Badge */}
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-mono font-medium text-slate-200">Preetesh Kumar Chaudhary</span>
+          <span className="text-slate-600 hidden xs:inline">•</span>
+          <span className="text-cyan-400 font-mono hidden xs:inline">2306209</span>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-purple-400 font-medium hidden sm:inline">GenAI</span>
+        </div>
+      </header>
 
       {/* Main Login Card */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-          {/* Subtle glow effect */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+          {/* Subtle ambient lighting */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Security Badge */}
           <div className="flex items-center justify-center mb-6">
@@ -178,13 +133,31 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
             </div>
           </div>
 
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
               Authentication Required
             </h1>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              This business intelligence and SQL agent workspace is protected. Sign in with your Google account to access data analytics.
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              Sign in with your authorized Google account to access real-time retail store data analytics, AI SQL generation, and business insights.
             </p>
+          </div>
+
+          {/* Developer Card Badge inside Gate */}
+          <div className="mb-6 p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-left space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] text-slate-400">
+              <span className="font-medium uppercase tracking-wider text-slate-500 text-[10px]">Lead Engineer / Creator</span>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 font-medium text-[10px]">
+                GenAI
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-200">
+                Preetesh Kumar Chaudhary
+              </span>
+              <span className="text-xs font-mono text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/40">
+                2306209
+              </span>
+            </div>
           </div>
 
           {authError && (
@@ -221,89 +194,32 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
               </svg>
               <span>Continue with Google</span>
             </button>
-
-            {!isConfigured && (
-              <p className="text-center text-xs text-amber-400/90 bg-amber-950/30 border border-amber-800/40 p-2.5 rounded-lg">
-                ⚠️ Firebase Web API credentials not set yet.{' '}
-                <button
-                  onClick={() => setShowConfigModal(true)}
-                  className="underline font-medium hover:text-amber-200"
-                >
-                  Click here to paste your Firebase config
-                </button>
-              </p>
-            )}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-8 pt-5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               OAuth 2.0 Protected
             </span>
-            <span>Single-Sign-On</span>
+            <span>Single Sign-On</span>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
-      <div className="py-4 text-center text-xs text-slate-600">
-        Enterprise Retail SQL Agent · Read-Only Safeguard Active
-      </div>
-
-      {/* Firebase Setup Modal */}
-      {showConfigModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-white text-base flex items-center gap-2">
-                <Settings className="w-4 h-4 text-cyan-400" />
-                Firebase OAuth Web Configuration
-              </h3>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="text-slate-400 hover:text-white text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Paste the <code className="text-cyan-300">firebaseConfig</code> object from your Firebase Console (Project Settings &rarr; Your apps &rarr; Web app).
-            </p>
-
-            <form onSubmit={handleSaveFirebaseConfig} className="space-y-4">
-              <div>
-                <label className="block text-xs font-mono text-slate-300 mb-1">
-                  Paste Config Snippet or JSON:
-                </label>
-                <textarea
-                  rows={8}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500"
-                  placeholder={`const firebaseConfig = {\n  apiKey: "AIzaSy...",\n  authDomain: "retail-store-sql-agent.firebaseapp.com",\n  projectId: "retail-store-sql-agent",\n  storageBucket: "retail-store-sql-agent.firebasestorage.app",\n  messagingSenderId: "...",\n  appId: "..."\n};`}
-                  value={rawConfigInput}
-                  onChange={(e) => setRawConfigInput(e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowConfigModal(false)}
-                  className="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300"
-                >
-                  Save & Connect
-                </button>
-              </div>
-            </form>
-          </div>
+      <footer className="py-4 border-t border-slate-900 bg-slate-950/80 px-4 flex flex-col sm:flex-row items-center justify-between max-w-6xl mx-auto w-full text-xs text-slate-500 gap-2">
+        <div className="flex items-center gap-2">
+          <span>Created by</span>
+          <strong className="text-slate-300 font-medium">Preetesh Kumar Chaudhary</strong>
+          <span>(ID: <span className="text-cyan-400 font-mono">2306209</span>)</span>
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50 text-[10px] font-semibold">
+            GenAI
+          </span>
+          <span>· Enterprise Retail SQL Studio</span>
+        </div>
+      </footer>
     </div>
   );
 };

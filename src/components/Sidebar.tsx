@@ -320,6 +320,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
         )}
+        {/* Creator Info Footer */}
+        <div className="p-3 border-t border-slate-800/80 bg-slate-950 text-[11px] text-slate-400">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-slate-300">Preetesh Kumar Chaudhary</span>
+            <span className="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 font-mono text-[10px] font-semibold">
+              GenAI
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-slate-500 mt-0.5">
+            <span>Roll ID: <strong className="text-cyan-400 font-mono">2306209</strong></span>
+            <span>Retail SQL Agent</span>
+          </div>
+        </div>
       </aside>
     </>
   );
