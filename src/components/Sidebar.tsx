@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         >
                           <div className="flex items-center gap-1.5 truncate">
                             {col.isPrimaryKey ? (
-                              <Key className="w-3 h-3 text-amber-400 shrink-0" title="Primary Key" />
+                              <span title="Primary Key" className="inline-flex items-center"><Key className="w-3 h-3 text-amber-400 shrink-0" /></span>
                             ) : col.isForeignKey ? (
                               <span className="text-cyan-400 text-[10px] font-bold" title="Foreign Key">
                                 FK

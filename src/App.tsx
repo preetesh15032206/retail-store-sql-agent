@@ -1,3 +1,4 @@
+import { AuthGate } from "./components/AuthGate.tsx";
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
@@ -6,6 +7,7 @@ import { SqlApprovalCard } from './components/SqlApprovalCard.tsx';
 import { DataTable } from './components/DataTable.tsx';
 import { ChartViewer } from './components/ChartViewer.tsx';
 import { ExplanationCard } from './components/ExplanationCard.tsx';
+import { ADMIN_EMAIL } from './components/Header.tsx';
 import { DatabaseModal } from './components/DatabaseModal.tsx';
 import { SchemaViewerModal } from './components/SchemaViewerModal.tsx';
 import {
@@ -289,6 +291,8 @@ export default function App() {
   };
 
   return (
+    <AuthGate>
+      {(user, onLogout) => (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
       {/* Sidebar Navigation */}
       <Sidebar
@@ -442,7 +446,7 @@ export default function App() {
 
       {/* Database Connection Modal */}
       <DatabaseModal
-        isOpen={isConnectModalOpen}
+        isOpen={isConnectModalOpen && (user?.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()}
         onClose={() => setIsConnectModalOpen(false)}
         activeEngine={activeEngine}
         currentDatabase={databaseName}
@@ -455,5 +459,7 @@ export default function App() {
         onClose={() => setIsScriptModalOpen(false)}
       />
     </div>
+      )}
+    </AuthGate>
   );
 }
