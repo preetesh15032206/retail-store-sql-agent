@@ -64,7 +64,7 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden text-slate-200">
+      <div className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden text-slate-200">
         {/* Modal Header */}
         <div className="px-5 py-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -89,9 +89,9 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 text-xs overflow-y-auto">
           {/* Engine Selector */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setSelectedMode('mysql')}
@@ -122,8 +122,8 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
           {/* Form fields for MySQL */}
           {selectedMode === 'mysql' ? (
             <div className="space-y-3 pt-2">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2 space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2 space-y-1">
                   <label className="text-[11px] font-medium text-slate-300">Host</label>
                   <input
                     type="text"
@@ -145,7 +145,7 @@ export const DatabaseModal: React.FC<DatabaseModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[11px] font-medium text-slate-300">Database Name</label>
                   <input

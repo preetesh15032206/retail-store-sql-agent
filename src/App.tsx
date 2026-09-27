@@ -65,6 +65,7 @@ export default function App() {
   // Modals
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isScriptModalOpen, setIsScriptModalOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // History & conversational context
   const [history, setHistory] = useState<QueryHistoryItem[]>(() => {
@@ -301,11 +302,17 @@ export default function App() {
         activeEngine={activeEngine}
         databaseName={databaseName}
         isExternalConnected={isExternalConnected}
-        onSelectHistoryItem={handleSelectHistoryItem}
+        onSelectHistoryItem={(item) => {
+          handleSelectHistoryItem(item);
+          setIsMobileSidebarOpen(false);
+        }}
         onOpenConnectModal={() => setIsConnectModalOpen(true)}
         onOpenScriptModal={() => setIsScriptModalOpen(true)}
         onRefreshSchema={fetchStatusAndSchema}
         isLoadingSchema={isLoadingSchema}
+        isAdmin={(user?.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase()}
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -319,10 +326,13 @@ export default function App() {
           onToggleAutoExecute={() => setAutoExecute(!autoExecute)}
           onOpenConnectModal={() => setIsConnectModalOpen(true)}
           tableCount={schema?.tables.length || 0}
+          user={user}
+          onLogout={onLogout}
+          onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
 
         {/* Scrollable Studio Workspace */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6 max-w-6xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 max-w-6xl mx-auto w-full">
           {/* Query Input Section */}
           <div className="space-y-3">
             <QueryInput

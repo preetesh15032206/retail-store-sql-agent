@@ -34,23 +34,25 @@ export const QueryInput: React.FC<QueryInputProps> = ({ onSubmit, isLoading, dis
     <div className="space-y-3">
       {/* Studio Search Bar */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-center rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-lg focus-within:border-cyan-500 focus-within:ring-1 focus-within:ring-cyan-500/30 transition-all overflow-hidden p-1.5 pl-4">
-          <div className="text-cyan-400 shrink-0 mr-2">
-            <Terminal className="w-4 h-4" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-lg focus-within:border-cyan-500 focus-within:ring-1 focus-within:ring-cyan-500/30 transition-all overflow-hidden p-1.5 sm:pl-4 gap-2 sm:gap-0">
+          <div className="flex items-center pl-2 sm:pl-0 flex-1 min-w-0">
+            <div className="text-cyan-400 shrink-0 mr-2">
+              <Terminal className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              value={question}
+              onChange={e => setQuestion(e.target.value)}
+              disabled={isLoading || disabled}
+              placeholder="Ask in plain English (e.g. 'Top 5 customers by revenue')..."
+              className="w-full bg-transparent py-2 sm:py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-400 focus:outline-hidden disabled:opacity-50 min-w-0"
+            />
           </div>
-          <input
-            type="text"
-            value={question}
-            onChange={e => setQuestion(e.target.value)}
-            disabled={isLoading || disabled}
-            placeholder="Ask a question in plain English (e.g. 'Top 5 customers by total spending', 'Revenue by category')..."
-            className="w-full bg-transparent py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:outline-hidden disabled:opacity-50"
-          />
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center justify-end shrink-0">
             <button
               type="submit"
               disabled={!question.trim() || isLoading || disabled}
-              className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-medium flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:cursor-not-allowed whitespace-nowrap"
+              className="w-full sm:w-auto px-4 py-2 sm:py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isLoading ? (
                 <>
@@ -60,7 +62,7 @@ export const QueryInput: React.FC<QueryInputProps> = ({ onSubmit, isLoading, dis
               ) : (
                 <>
                   <span>Generate SQL</span>
-                  <CornerDownLeft className="w-3 h-3 text-cyan-200" />
+                  <CornerDownLeft className="w-3 h-3 text-cyan-200 hidden sm:inline" />
                 </>
               )}
             </button>
@@ -68,9 +70,9 @@ export const QueryInput: React.FC<QueryInputProps> = ({ onSubmit, isLoading, dis
         </div>
       </form>
 
-      {/* Suggested Quick Prompts */}
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-slate-400 text-xs font-medium shrink-0">
+      {/* Suggested Quick Prompts with touch-scrollable row on mobile */}
+      <div className="flex items-center gap-1.5 text-xs overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-slate-800">
+        <span className="text-slate-400 text-xs font-medium shrink-0 hidden sm:inline mr-1">
           Suggested:
         </span>
         {EXAMPLE_QUERIES.map((query, i) => (
@@ -78,10 +80,10 @@ export const QueryInput: React.FC<QueryInputProps> = ({ onSubmit, isLoading, dis
             key={i}
             onClick={() => handleSelectExample(query)}
             disabled={isLoading}
-            className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs whitespace-nowrap"
+            className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs whitespace-nowrap shrink-0 active:scale-95"
           >
             <span>{query}</span>
-            <ArrowUpRight className="w-3 h-3 text-slate-500" />
+            <ArrowUpRight className="w-3 h-3 text-slate-500 shrink-0" />
           </button>
         ))}
       </div>

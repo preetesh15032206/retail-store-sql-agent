@@ -21,7 +21,7 @@ export const ExplanationCard: React.FC<ExplanationCardProps> = ({ explanation })
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex items-center justify-between">
+      <div className="px-3.5 sm:px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
             <BookOpen className="w-4 h-4" />
@@ -44,7 +44,7 @@ export const ExplanationCard: React.FC<ExplanationCardProps> = ({ explanation })
       </div>
 
       {isExpanded && (
-        <div className="p-5 space-y-4 text-xs font-sans">
+        <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 text-xs font-sans">
           {/* Executive Summary */}
           <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800/80">
             <div className="flex items-start gap-2.5">

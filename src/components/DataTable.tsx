@@ -6,9 +6,7 @@ import {
   ArrowDown,
   Search,
   ChevronLeft,
-  ChevronRight,
-  Database,
-  Check
+  ChevronRight
 } from 'lucide-react';
 import { ExecutionResult } from '../../shared/types.ts';
 
@@ -21,29 +19,26 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [copiedCsv, setCopiedCsv] = useState(false);
+  const pageSize = 10;
 
-  // Sorting handler
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else {
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      if (sortDirection === 'asc') setSortDirection('desc');
+      else {
         setSortColumn(null);
         setSortDirection('asc');
       }
     } else {
-      setSortColumn(column);
+      setSortColumn(col);
       setSortDirection('asc');
     }
   };
 
-  // Filtered and Sorted Rows
+  // Filter & Sort
   const processedRows = useMemo(() => {
     let rows = [...result.rows];
 
-    // Filter
+    // Search
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       rows = rows.filter(row =>
@@ -71,6 +66,7 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
 
         const strA = String(valA).toLowerCase();
         const strB = String(valB).toLowerCase();
+
         if (strA < strB) return sortDirection === 'asc' ? -1 : 1;
         if (strA > strB) return sortDirection === 'asc' ? 1 : -1;
         return 0;
@@ -97,16 +93,17 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
           const val = row[col];
           if (val === null || val === undefined) return '""';
           const str = String(val).replace(/"/g, '""');
-          return `"${str}"`;
+          return '"' + str + '"';
         })
         .join(',')
     );
-    const csvContent = [headers, ...rows].join('\n');
+
+    const csvContent = [headers, ...rows].join(String.fromCharCode(10));
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `query_result_${Date.now()}.csv`;
+    link.download = 'query_result_' + Date.now() + '.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -120,21 +117,19 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900 shadow-xl overflow-hidden">
       {/* Table Action Bar */}
-      <div className="px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-100">
-              Query Results
-            </span>
-            <span className="text-xs text-slate-400 font-mono tabular-nums">
-              ({result.rowCount} rows · {result.executionTimeMs}ms)
-            </span>
-          </div>
+      <div className="px-3.5 sm:px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
+          <span className="text-xs sm:text-sm font-semibold text-slate-100">
+            Query Results
+          </span>
+          <span className="text-[11px] sm:text-xs text-slate-400 font-mono tabular-nums bg-slate-800/60 px-2 py-0.5 rounded-full">
+            {result.rowCount} rows · {result.executionTimeMs}ms
+          </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Live Search */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-500" />
             <input
               type="text"
@@ -144,24 +139,25 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
                 setCurrentPage(1);
               }}
               placeholder="Filter results..."
-              className="bg-slate-900 border border-slate-800 rounded-md pl-8 pr-3 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-slate-700 w-36 sm:w-48"
+              className="bg-slate-900 border border-slate-800 rounded-md pl-8 pr-3 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-slate-700 w-full sm:w-48"
             />
           </div>
 
           {/* Export CSV Button */}
           <button
             onClick={handleExportCsv}
-            className="px-3 py-1 rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-2.5 py-1 rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span>Export CSV</span>
+            <span className="hidden xs:inline">Export</span>
+            <span>CSV</span>
           </button>
         </div>
       </div>
 
       {/* Table Data View */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800">
+        <table className="w-full text-left border-collapse text-xs min-w-[500px] sm:min-w-full">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 uppercase tracking-wider text-[11px] font-semibold">
               {result.columns.map(col => {
@@ -170,7 +166,7 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
                   <th
                     key={col}
                     onClick={() => handleSort(col)}
-                    className="px-4 py-3 cursor-pointer hover:text-slate-200 hover:bg-slate-800/40 transition-colors select-none font-mono"
+                    className="px-3.5 sm:px-4 py-2.5 sm:py-3 cursor-pointer hover:text-slate-200 hover:bg-slate-800/40 transition-colors select-none font-mono whitespace-nowrap"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>{col}</span>
@@ -211,9 +207,7 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
                     return (
                       <td
                         key={col}
-                        className={`px-4 py-2.5 truncate max-w-xs ${
-                          isNum ? 'font-mono text-cyan-200 tabular-nums' : ''
-                        }`}
+                        className={'px-3.5 sm:px-4 py-2 sm:py-2.5 truncate max-w-xs ' + (isNum ? 'font-mono text-cyan-200 tabular-nums' : '')}
                       >
                         {val !== null && val !== undefined ? String(val) : (
                           <span className="text-slate-600 italic">null</span>
@@ -230,16 +224,16 @@ export const DataTable: React.FC<DataTableProps> = ({ result }) => {
 
       {/* Pagination Footer */}
       {totalPages > 1 && (
-        <div className="px-5 py-2.5 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between text-xs text-slate-400">
-          <div>
-            Showing <strong className="text-slate-200 tabular-nums">{(currentPage - 1) * pageSize + 1}</strong> to{' '}
+        <div className="px-3.5 sm:px-5 py-2 sm:py-2.5 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between text-xs text-slate-400">
+          <div className="truncate mr-2">
+            <span className="hidden sm:inline">Showing </span>
+            <strong className="text-slate-200 tabular-nums">{(currentPage - 1) * pageSize + 1}</strong>-
             <strong className="text-slate-200 tabular-nums">
               {Math.min(currentPage * pageSize, processedRows.length)}
             </strong>{' '}
-            of <strong className="text-slate-200 tabular-nums">{processedRows.length}</strong> rows
+            of <strong className="text-slate-200 tabular-nums">{processedRows.length}</strong>
           </div>
-
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
