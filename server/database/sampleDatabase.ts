@@ -492,12 +492,7 @@ INSERT INTO orders (order_id, customer_id, product_id, quantity, total_amount, o
 (1024, 5, 103, 1, 12499.00, '2024-05-20', 'Completed'),
 (1025, 7, 104, 1, 18999.00, '2024-06-01', 'Completed');
 
--- ------------------------------------------------------------------------------
--- Recommended Read-Only MySQL User Creation Script
--- ------------------------------------------------------------------------------
--- CREATE USER 'read_only_agent'@'%' IDENTIFIED BY 'YourStrongPassword123!';
--- GRANT SELECT ON retail_store.* TO 'read_only_agent'@'%';
--- FLUSH PRIVILEGES;
+
 `;
   }
 }

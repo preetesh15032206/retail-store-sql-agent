@@ -67,30 +67,46 @@ export default function App() {
   const [isScriptModalOpen, setIsScriptModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // History & conversational context
-  const [history, setHistory] = useState<QueryHistoryItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('sql_agent_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // History & conversational context (isolated per authenticated user)
+  const [history, setHistory] = useState<QueryHistoryItem[]>([]);
   const [conversationContext, setConversationContext] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
+
+  // Load user-specific history when user logs in
+  const loadUserHistory = (userEmail: string) => {
+    if (!userEmail) {
+      setHistory([]);
+      return;
+    }
+    setCurrentUserEmail(userEmail);
+    try {
+      const storageKey = 'sql_agent_history_' + btoa(userEmail.toLowerCase().trim()).replace(/=/g, '');
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setHistory(JSON.parse(saved));
+      } else {
+        setHistory([]);
+      }
+    } catch {
+      setHistory([]);
+    }
+  };
+
+  // Save history scoped to current user only
+  useEffect(() => {
+    if (!currentUserEmail) return;
+    try {
+      const storageKey = 'sql_agent_history_' + btoa(currentUserEmail.toLowerCase().trim()).replace(/=/g, '');
+      localStorage.setItem(storageKey, JSON.stringify(history));
+    } catch (e) {
+      // storage full / disabled
+    }
+  }, [history, currentUserEmail]);
 
   // Fetch initial schema and status on mount
   useEffect(() => {
     fetchStatusAndSchema();
   }, []);
-
-  // Save history to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('sql_agent_history', JSON.stringify(history));
-    } catch (e) {
-      // storage full / disabled
-    }
-  }, [history]);
 
   const fetchStatusAndSchema = async () => {
     setIsLoadingSchema(true);
@@ -293,7 +309,12 @@ export default function App() {
 
   return (
     <AuthGate>
-      {(user, onLogout) => (
+      {(user, onLogout) => {
+        // Synchronize authenticated user history
+        if (user?.email && user.email !== currentUserEmail) {
+          loadUserHistory(user.email);
+        }
+        return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
       {/* Sidebar Navigation */}
       <Sidebar
@@ -463,13 +484,16 @@ export default function App() {
         onConnect={handleConnectDatabase}
       />
 
-      {/* Schema Script Modal */}
-      <SchemaViewerModal
-        isOpen={isScriptModalOpen}
-        onClose={() => setIsScriptModalOpen(false)}
-      />
-    </div>
+      {/* Schema Script Modal (Admin only) */}
+      {((user?.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()) && (
+        <SchemaViewerModal
+          isOpen={isScriptModalOpen}
+          onClose={() => setIsScriptModalOpen(false)}
+        />
       )}
+    </div>
+        );
+      }}
     </AuthGate>
   );
 }

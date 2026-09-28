@@ -290,6 +290,11 @@ app.post('/api/correct-sql', async (req: Request, res: Response) => {
  * Download / View Sample MySQL DDL & DML Script
  */
 app.get('/api/sample-sql-script', (req: Request, res: Response) => {
+  const userEmail = (req.headers['x-user-email'] as string || '').trim().toLowerCase();
+  const adminEmail = (process.env.ADMIN_EMAIL || 'preetesh4153@gmail.com').trim().toLowerCase();
+  if (userEmail !== adminEmail) {
+    return res.status(403).type('text/plain').send('-- Access restricted: Sample seed script is reserved for workspace administrator.');
+  }
   res.type('text/plain').send(SampleDatabase.getSampleSqlScript());
 });
 

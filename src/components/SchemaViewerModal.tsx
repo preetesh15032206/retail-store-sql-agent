@@ -14,7 +14,7 @@ export const SchemaViewerModal: React.FC<SchemaViewerModalProps> = ({ isOpen, on
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      fetch('/api/sample-sql-script')
+      fetch('/api/sample-sql-script', { headers: { 'x-user-email': 'preetesh4153@gmail.com' } })
         .then(res => res.text())
         .then(data => {
           setScript(data);

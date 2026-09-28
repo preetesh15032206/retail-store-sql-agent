@@ -256,18 +256,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               })
             )}
 
-            {/* Schema Footer Actions */}
+            {/* Schema Footer Actions (Admin Only) */}
             <div className="pt-3 px-2 flex items-center justify-between text-xs text-slate-400">
-              <button
-                onClick={() => {
-                  onOpenScriptModal();
-                  if (onCloseMobile) onCloseMobile();
-                }}
-                className="hover:text-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer text-slate-400 hover:text-cyan-300"
-              >
-                <FileCode2 className="w-3.5 h-3.5 text-slate-500" />
-                <span>View Seed SQL DDL</span>
-              </button>
+              {isAdmin ? (
+                <button
+                  onClick={() => {
+                    onOpenScriptModal();
+                    if (onCloseMobile) onCloseMobile();
+                  }}
+                  className="hover:text-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer text-slate-400 hover:text-cyan-300"
+                >
+                  <FileCode2 className="w-3.5 h-3.5 text-slate-500" />
+                  <span>View Seed SQL DDL</span>
+                </button>
+              ) : <div />}
               {isAdmin && (
                 <button
                   onClick={() => {
